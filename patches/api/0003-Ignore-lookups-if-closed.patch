@@ -5,19 +5,19 @@ Subject: [PATCH] Ignore lookups if closed
 
 
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 7eb55cdc1e7674d6feb7574a8c55a3e1b9d0e487..0011c228b10316b09a62579dfc3d37794ee8e61a 100644
+index 12bd25cfcefbb66f0d686ba9e344b7a71b30f4dc..24ab015fbab6ce789999872791f7ffe4cc64d6d6 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -46,6 +46,8 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
-     private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
-     private java.util.logging.Logger logger; // Paper - add field
+@@ -48,6 +48,8 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+     private io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup classLoaderGroup; // Paper
+     public io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext; // Paper
  
 +    private boolean closed = false; // Pufferfish
 +
      static {
          ClassLoader.registerAsParallelCapable();
      }
-@@ -185,7 +187,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -191,7 +193,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
          }
          Class<?> result = classes.get(name);
  
@@ -26,16 +26,16 @@ index 7eb55cdc1e7674d6feb7574a8c55a3e1b9d0e487..0011c228b10316b09a62579dfc3d3779
              String path = name.replace('.', '/').concat(".class");
              JarEntry entry = jar.getJarEntry(path);
  
-@@ -232,6 +234,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
-             classes.put(name, result);
+@@ -238,6 +240,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+             this.setClass(name, result); // Paper
          }
  
 +        if (result == null) throw new ClassNotFoundException(name); // Pufferfish
          return result;
      }
  
-@@ -240,6 +243,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
-         try {
+@@ -252,6 +255,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+             // Paper end
              super.close();
          } finally {
 +            this.closed = true; // Pufferfish
